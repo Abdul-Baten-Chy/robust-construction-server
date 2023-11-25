@@ -33,6 +33,11 @@ async function run() {
       const result = await serviceCollections.find().toArray()
       res.send(result)
     })
+    app.post('/users', async(req,res)=>{
+      const users=req.body
+      const result = await userCollections.insertOne(users)
+      res.send(result)
+    })
 
     
 
