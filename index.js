@@ -27,8 +27,12 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
     const userCollections = client.db("robust-constructionDb").collection("users");
+    const serviceCollections = client.db("robust-constructionDb").collection("services");
 
-
+    app.get('/services', async(req,res)=>{
+      const result = await serviceCollections.find().toArray()
+      res.send(result)
+    })
 
     
 
