@@ -2,13 +2,28 @@ const express = require('express')
 const app = express()
 const cors = require('cors')
 const jwt = require('jsonwebtoken');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config()
 const port = process.env.PORT || 5000
 
 //midleware
 app.use(cors())
 app.use(express.json())
+
+const verifyToken = (req, res, next) => {
+  console.log('inside verify token', req.headers.authorization);
+  if (!req.headers.authorization) {
+    return res.status(401).send({ message: 'unauthorized access' });
+  }
+  const token = req.headers.authorization.split(' ')[1];
+  jwt.verify(token, process.env.process.env.SECRETE_KEY, (err, decoded) => {
+    if (err) {
+      return res.status(401).send({ message: 'unauthorized access' })
+    }
+    req.decoded = decoded;
+    next();
+  })
+}
 
 
 
@@ -34,6 +49,37 @@ async function run() {
       const result = await serviceCollections.find().toArray()
       res.send(result)
     })
+    
+    app.get('/users', async(req,res)=>{
+      
+      const result = await userCollections.find().toArray()
+      res.send(result)
+    })
+
+    app.get('/users/hr/:email',  async(req,res)=>{
+      const email = req.params.email;
+      const query ={email: email}
+      const result = await userCollections.findOne(query)
+      res.send(result)
+    })
+
+
+app.patch('/users/verify/:id', async (req, res) => {
+  const id = req.params.id;
+  const query = {_id:new ObjectId(id)}
+  const user = await userCollections.findOne(query);
+  const isVerified = user.isVerified || false;
+  const updatedDoc = {
+    $set: {
+      isVerified: !isVerified
+    }
+  };
+  const result = await userCollections.updateOne(query, updatedDoc);
+  res.send(result);
+});
+
+
+
     app.post('/users', async(req,res)=>{
       const users=req.body
       const result = await userCollections.insertOne(users)
