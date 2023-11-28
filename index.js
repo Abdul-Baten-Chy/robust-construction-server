@@ -56,11 +56,38 @@ async function run() {
       res.send(result)
     })
 
-    app.get('/users/hr/:email',  async(req,res)=>{
+    app.get('/users/role/:email',  async(req,res)=>{
       const email = req.params.email;
       const query ={email: email}
       const result = await userCollections.findOne(query)
       res.send(result)
+    })
+
+    app.patch('/users/hr/:id',  async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const user = await userCollections.findOne(query);
+      
+      const updatedDoc = {
+        $set: {
+         role: 'Hr Manager'
+        }
+      };
+      const result = await userCollections.updateOne(query, updatedDoc);
+      res.send(result);
+    })
+    app.patch('/users/fire/:id',  async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const user = await userCollections.findOne(query);
+      let isFired = user.isFired || false; 
+      const updatedDoc = {
+        $set: {
+         isFired: !isFired
+        }
+      };
+      const result = await userCollections.updateOne(query, updatedDoc);
+      res.send(result);
     })
 
 
