@@ -16,7 +16,7 @@ const verifyToken = (req, res, next) => {
     return res.status(401).send({ message: 'unauthorized access' });
   }
   const token = req.headers.authorization.split(' ')[1];
-  jwt.verify(token, process.env.process.env.SECRETE_KEY, (err, decoded) => {
+  jwt.verify(token, process.env.SECRETE_KEY, (err, decoded) => {
     if (err) {
       return res.status(401).send({ message: 'unauthorized access' })
     }
@@ -25,6 +25,8 @@ const verifyToken = (req, res, next) => {
   })
 }
 
+
+ 
 
 
 const uri = `mongodb+srv://${process.env.USER}:${process.env.USER_PASS}@cluster0.yjorklr.mongodb.net/?retryWrites=true&w=majority`;
@@ -41,16 +43,17 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
     const userCollections = client.db("robust-constructionDb").collection("users");
     const serviceCollections = client.db("robust-constructionDb").collection("services");
+    const workSheetCollections = client.db("robust-constructionDb").collection("worksheet");
 
     app.get('/services', async(req,res)=>{
       const result = await serviceCollections.find().toArray()
       res.send(result)
     })
     
-    app.get('/users', async(req,res)=>{
+    app.get('/users',  async(req,res)=>{
       
       const result = await userCollections.find().toArray()
       res.send(result)
@@ -60,6 +63,11 @@ async function run() {
       const email = req.params.email;
       const query ={email: email}
       const result = await userCollections.findOne(query)
+      res.send(result)
+    })
+
+    app.get('/worksheet', async(req, res)=>{
+      const result = await workSheetCollections.find().toArray()
       res.send(result)
     })
 
@@ -91,19 +99,19 @@ async function run() {
     })
 
 
-app.patch('/users/verify/:id', async (req, res) => {
-  const id = req.params.id;
-  const query = {_id:new ObjectId(id)}
-  const user = await userCollections.findOne(query);
-  const isVerified = user.isVerified || false;
-  const updatedDoc = {
-    $set: {
-      isVerified: !isVerified
-    }
-  };
-  const result = await userCollections.updateOne(query, updatedDoc);
-  res.send(result);
-});
+    app.patch('/users/verify/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = {_id:new ObjectId(id)}
+      const user = await userCollections.findOne(query);
+      const isVerified = user.isVerified || false;
+      const updatedDoc = {
+      $set: {
+        isVerified: !isVerified
+        }
+      };
+      const result = await userCollections.updateOne(query, updatedDoc);
+      res.send(result);
+    });
 
 
 
@@ -116,15 +124,22 @@ app.patch('/users/verify/:id', async (req, res) => {
     app.post('/jwt', async(req,res)=>{
 
       const user =req.body
-      const token = await jwt.sign(user,process.env.SECRETE_KEY,{expiresIn: '1h'})
+      console.log(user);
+      const token = jwt.sign(user,process.env.SECRETE_KEY,{expiresIn: '1h'})
       res.send({token})
     })
 
+    app.post('/worksheet', async(req, res)=>{
+      const workInfo = req.body
+      const result = await workSheetCollections.insertOne(workInfo)
+      res.send(result)
+    })
+    
     
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    // await client.db("admin").command({ ping: 1 });
+    // console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
